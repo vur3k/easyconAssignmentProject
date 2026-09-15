@@ -1,0 +1,137 @@
+services:
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: iot-mosquitto
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto/config:/mosquitto/config
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
+  mongodb:
+    image: mongo:6
+    container_name: iot-mongodb
+    restart: unless-stopped
+    volumes:
+      - mongodb_data:/data/db
+    expose:
+      - "27017"
+  postgres:
+    image: postgres:16
+    container_name: iot-postgres
+    environment:
+      POSTGRES_USER: postgres              # ← Superuser pro inicializaci
+      POSTGRES_PASSWORD: postgres_password # ← Heslo pro superusera
+      POSTGRES_DB: easycon_db              # ← Databáze pro Django
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+  thermometer:
+    container_name: iot-thermometer
+    restart: unless-stopped
+    build:
+      context: ./services/mqtt/thermometer
+    command: python3 thermometer.py
+    env_file: .env
+    environment:
+      - LOCATION_ID=lkpr
+      - MQTT_HOST=mosquitto
+      - MQTT_PORT=1883
+    depends_on:
+      - mosquitto
+  radiator:
+    container_name: iot-radiator
+    restart: unless-stopped
+    build:
+      context: ./services/mqtt/radiator
+    command: python3 radiator.py
+    environment:
+      - DEVICE_ID=radiator-01
+      - MQTT_HOST=mosquitto
+      - MQTT_PORT=1883
+    depends_on:
+      - mosquitto
+  thermostat:
+    container_name: iot-thermostat
+    restart: unless-stopped
+    build:
+      context: ./services/mqtt/thermostat
+    command: python3 thermostat.py
+    environment:
+      - MQTT_HOST=mosquitto
+      - MQTT_PORT=1883
+      - THERMOMETER_ID=lkpr
+      - RADIATOR_ID=radiator-01
+      - DEVICE_ID=thermostat-01
+    depends_on:
+      - mosquitto
+      - radiator
+      - thermometer
+  collector:
+    container_name: iot-collector
+    restart: unless-stopped
+    build:
+      context: ./services/mqtt/collector
+    command: python3 collector.py
+    environment:
+      - MQTT_HOST=mosquitto
+      - MQTT_PORT=1883
+      - MONGO_HOST=mongodb
+      - MONGO_PORT=27017
+      - MONGO_DATABASE=iot_data
+      - MONGO_COLLECTION=mqtt_messages
+    depends_on:
+      - mosquitto
+      - mongodb
+  air_quality_server:
+    container_name: iot-air-quality-server
+    build:
+      context: ./services/modbus/air_quality_server
+    command: python3 server.py
+    env_file: .env
+    ports:
+      - "5020:5020"
+    environment:
+      - MODBUS_HOST=0.0.0.0
+      - MODBUS_PORT=5020
+      - LATITUDE=49.1951
+      - LONGITUDE=16.6068
+      - UPDATE_INTERVAL=180
+    restart: unless-stopped
+  air_quality_client:
+    container_name: iot-air-quality-client
+    restart: unless-stopped
+    build:
+      context: ./services/modbus/air_quality_client
+    command: python3 client.py
+    environment:
+      - MODBUS_HOST=air_quality_server
+      - MODBUS_PORT=5020
+      - MODBUS_DEVICE_ID=1
+      - MODBUS_POLL_INTERVAL=180
+      - MONGO_HOST=mongodb
+      - MONGO_PORT=27017
+      - MONGO_DATABASE=iot_data
+      - MONGO_COLLECTION=modbus_readings
+    depends_on:
+      - air_quality_server
+      - mongodb
+  backend:
+    build:
+      context: ./backend
+    container_name: iot-backend
+    ports:
+      - "8000:8000"
+    env_file: ./backend/.env
+    environment:
+      - DEBUG="True"
+      - ALLOWED_HOSTS=localhost,127.0.0.1,backend
+    depends_on:
+      - postgres
+      - mongodb
+volumes:
+  mongodb_data:
+  postgres_data:
