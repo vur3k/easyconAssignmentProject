@@ -22,7 +22,7 @@ MONGO_DATABASE = os.environ["MONGO_DATABASE"]
 MONGO_COLLECTION = os.environ["MONGO_COLLECTION"]
 
 
-def connect_to_db():
+def connect_to_db() -> MongoClient:
     while True:
         try:
             client = MongoClient(
@@ -46,7 +46,7 @@ def connect_to_db():
             time.sleep(5)
 
 
-def save_reading(client: MongoClient, reading: dict):
+def save_reading(client: MongoClient, reading: dict) -> None:
     collection = client[MONGO_DATABASE][MONGO_COLLECTION]
     result = collection.insert_one(reading)
     logging.info(f"Stored reading with id {result.inserted_id} {reading}")
@@ -114,7 +114,7 @@ async def read_air_quality() -> dict | None:
         client.close()
 
 
-async def async_loop():
+async def async_loop() -> None:
     mongo_client = connect_to_db()
 
     try:

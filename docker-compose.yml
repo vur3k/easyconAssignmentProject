@@ -21,9 +21,9 @@ services:
     image: postgres:16
     container_name: iot-postgres
     environment:
-      POSTGRES_USER: postgres              # ← Superuser pro inicializaci
-      POSTGRES_PASSWORD: postgres_password # ← Heslo pro superusera
-      POSTGRES_DB: easycon_db              # ← Databáze pro Django
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_password
+      POSTGRES_DB: easycon_db
     ports:
       - "5433:5432"
     volumes:

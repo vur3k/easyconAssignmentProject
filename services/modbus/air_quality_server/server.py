@@ -26,17 +26,10 @@ API_PARAMS = {
     "current": "pm2_5,pm10,nitrogen_dioxide,ozone,european_aqi"
 }
 
-INITIAL_INPUT_REGISTERS = [
-    87,   # PM2.5: 8.7 µg/m³
-    142,  # PM10: 14.2 µg/m³
-    116,  # NO2: 11.6 µg/m³
-    742,  # O3: 74.2 µg/m³
-    32,   # European AQI
-    1,    # Data valid
-]
+INITIAL_INPUT_REGISTERS = [0, 0, 0, 0, 0, 0]
 
 
-def create_context():
+def create_context() -> tuple[ModbusServerContext, ModbusSequentialDataBlock]:
     input_registers = ModbusSequentialDataBlock(
         1,
         INITIAL_INPUT_REGISTERS,
@@ -65,7 +58,7 @@ def extract_fetched_data(data: dict[str, any]) -> list[int]:
     ]
 
 
-def fetch_air_quality():
+def fetch_air_quality() -> list[int] | None:
     try:
         response = requests.get(API_URL, params=API_PARAMS, timeout=15)
         response.raise_for_status()
@@ -83,7 +76,9 @@ def fetch_air_quality():
         return None
 
 
-async def update_registers_task(input_registers: ModbusSequentialDataBlock):
+async def update_registers_task(
+    input_registers: ModbusSequentialDataBlock
+) -> None:
     while True:
         new_data = fetch_air_quality()
         await input_registers.async_setValues(
@@ -94,7 +89,7 @@ async def update_registers_task(input_registers: ModbusSequentialDataBlock):
         await asyncio.sleep(5)
 
 
-async def async_loop():
+async def async_loop() -> None:
     context, input_registers = create_context()
     asyncio.create_task(
         update_registers_task(input_registers)

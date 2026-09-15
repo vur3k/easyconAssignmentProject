@@ -23,7 +23,7 @@ DEVICE_ID = f"{LOCATION_ID}-weather_client-01"
 PUBLISH_INTERVAL = 30  # seconds
 
 
-def fetch_weather_data():
+def fetch_weather_data() -> json:
     headers = {
         "X-API-Key": API_KEY,
     }

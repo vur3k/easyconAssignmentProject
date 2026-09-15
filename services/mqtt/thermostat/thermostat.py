@@ -15,18 +15,10 @@ THERMOMETER_ID = os.environ["THERMOMETER_ID"]
 RADIATOR_ID = os.environ["RADIATOR_ID"]
 DEVICE_ID = os.environ["DEVICE_ID"]
 
-TELEMETRY_TOPIC = (
-    f"smart-home/thermometers/{THERMOMETER_ID}/telemetry"
-)
-RADIATOR_STATUS_TOPIC = (
-    f"smart-home/radiators/{RADIATOR_ID}/status"
-)
-RADIATOR_COMMAND_TOPIC = (
-    f"smart-home/radiators/{RADIATOR_ID}/commands"
-)
-CONFIG_TOPIC = (
-    f"smart-home/controllers/{DEVICE_ID}/config"
-)
+TELEMETRY_TOPIC = f"smart-home/thermometers/{THERMOMETER_ID}/telemetry"
+RADIATOR_STATUS_TOPIC = f"smart-home/radiators/{RADIATOR_ID}/status"
+RADIATOR_COMMAND_TOPIC = f"smart-home/radiators/{RADIATOR_ID}/commands"
+CONFIG_TOPIC = f"smart-home/controllers/{DEVICE_ID}/config"
 
 
 @dataclass
@@ -81,17 +73,13 @@ def evaluate_heating(client: mqtt.Client) -> None:
         config.target_temperature_c + config.hysteresis_c
     )
 
-    if (
-        state.current_temperature_c < lower_threshold
-        and not state.radiator_is_on
-    ):
+    if state.current_temperature_c < lower_threshold and \
+            not state.radiator_is_on:
         publish_radiator_command(client, "turn_on")
         return
 
-    if (
-        state.current_temperature_c >= upper_threshold
-        and state.radiator_is_on
-    ):
+    if state.current_temperature_c >= upper_threshold \
+            and state.radiator_is_on:
         publish_radiator_command(client, "turn_off")
         return
 

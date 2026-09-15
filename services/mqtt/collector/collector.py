@@ -23,7 +23,7 @@ MONGO_DATABASE = os.environ["MONGO_DATABASE"]
 MONGO_COLLECTION = os.environ["MONGO_COLLECTION"]
 
 
-def connect_to_db():
+def connect_to_db() -> MongoClient:
     while True:
         try:
             client = MongoClient(
