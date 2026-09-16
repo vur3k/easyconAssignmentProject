@@ -44,7 +44,7 @@ def create_payload(data) -> str:
         "location_id": LOCATION_ID,
         "temperature_c": data["temperature"]["celsius"],
         "wind_speed_mps": data["wind"]["speed"]["mps"],
-        "wind_direction_deg": data["wind"]["degrees"],
+        "wind_direction": data["wind"]["direction"],
         "humidity_percent": data["humidity"],
         "source": "checkwx",
         "measured_at": datetime.now(timezone.utc).isoformat(),
