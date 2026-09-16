@@ -48,6 +48,7 @@ services:
     build:
       context: ./services/mqtt/radiator
     command: python3 radiator.py
+    env_file: .env
     environment:
       - DEVICE_ID=radiator-01
       - MQTT_HOST=mosquitto
@@ -60,6 +61,7 @@ services:
     build:
       context: ./services/mqtt/thermostat
     command: python3 thermostat.py
+    env_file: .env
     environment:
       - MQTT_HOST=mosquitto
       - MQTT_PORT=1883
@@ -76,6 +78,7 @@ services:
     build:
       context: ./services/mqtt/collector
     command: python3 collector.py
+    env_file: .env
     environment:
       - MQTT_HOST=mosquitto
       - MQTT_PORT=1883
@@ -95,6 +98,8 @@ services:
     ports:
       - "5020:5020"
     environment:
+      - MQTT_HOST=mosquitto
+      - MQTT_PORT=1883
       - MODBUS_HOST=0.0.0.0
       - MODBUS_PORT=5020
       - LATITUDE=49.1951
@@ -107,6 +112,7 @@ services:
     build:
       context: ./services/modbus/air_quality_client
     command: python3 client.py
+    env_file: .env
     environment:
       - MODBUS_HOST=air_quality_server
       - MODBUS_PORT=5020
@@ -127,11 +133,23 @@ services:
       - "8000:8000"
     env_file: ./backend/.env
     environment:
-      - DEBUG="True"
+      - DEBUG="False"
       - ALLOWED_HOSTS=localhost,127.0.0.1,backend
     depends_on:
       - postgres
       - mongodb
+  tests:
+    build:
+      context: ./backend
+    command: python manage.py test api -v 2
+    env_file: ./backend/.env
+    environment:
+      - DEBUG="False"
+    depends_on:
+      - postgres
+      - mongodb
+      - backend
+      - mosquitto
 volumes:
   mongodb_data:
   postgres_data:
