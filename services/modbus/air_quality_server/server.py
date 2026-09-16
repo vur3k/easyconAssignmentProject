@@ -47,27 +47,24 @@ def create_context() -> tuple[ModbusServerContext, ModbusSequentialDataBlock]:
     return server_context, input_registers
 
 
-def extract_fetched_data(data: dict[str, any]) -> list[int]:
-    return [
-        int(data.get("pm2_5", 0)) * 10,
-        int(data.get("pm10", 0)) * 10,
-        int(data.get("nitrogen_dioxide", 0)) * 10,
-        int(data.get("ozone", 0)) * 10,
-        int(data.get("european_aqi", 0)),
-        1
-    ]
-
-
 def fetch_air_quality() -> list[int] | None:
     try:
         response = requests.get(API_URL, params=API_PARAMS, timeout=15)
         response.raise_for_status()
         data = response.json()
         current = data.get("current", {})
+        logging.info(current)
         if not current:
             logging.warning("Malformed API response: %s", data)
             return None
-        return extract_fetched_data(current)
+        return [
+            int(current["pm2_5"] * 10),
+            int(current["pm10"] * 10),
+            int(current["nitrogen_dioxide"] * 10),
+            int(current["ozone"] * 10),
+            current["european_aqi"],
+            1
+        ]
     except Exception as e:
         logging.error(
             "Failed to fetch air quality data: %s",
