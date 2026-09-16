@@ -86,7 +86,7 @@ async def update_registers_task(
             new_data,
         )
         logging.info("Updated registers: %s", new_data)
-        await asyncio.sleep(5)
+        await asyncio.sleep(UPDATE_INTERVAL)
 
 
 async def async_loop() -> None:
